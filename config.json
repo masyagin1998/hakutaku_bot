@@ -1,0 +1,5 @@
+{
+    "token" : "your token",
+    "mode" : "long polling",
+    "debug" : false
+}
