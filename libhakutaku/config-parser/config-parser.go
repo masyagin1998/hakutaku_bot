@@ -1,3 +1,8 @@
+// Copyright (C) 2018 Mikhail Masyagin
+
+/*
+Package configParser contains configuration structs and their reader.
+*/
 package configParser
 
 import (
@@ -5,11 +10,29 @@ import (
 	"os"
 )
 
-// Config struct stores bot configuration.
+// Config struct contains bot configuration.
 type Config struct {
-	Token string `json:"token"`
-	Mode  string `json:"mode"`
-	Debug bool   `json:"debug"`
+	Token         string        `json:"token"`
+	Support       string        `json:"support"`
+	Mode          string        `json:"mode"`
+	UpdateTime    string        `json:"updateTime"`
+	RedisAddr     string        `json:"redisAddr"`
+	RedisPassword string        `json:"redisPassword"`
+	RedisNumber   int           `json:"redisNumber"`
+	LogFile       string        `json:"logFile"`
+	Debug         bool          `json:"debug"`
+	Answers       AnswerStrings `json:"answers"`
+}
+
+// AnswerStrings struct contains bot answers.
+type AnswerStrings struct {
+	Greetings   []string `json:"greetings"`
+	Help        string   `json:"help"`
+	Doubts      []string `json:"doubts"`
+	NoArguments []string `json:"noArguments"`
+	Sorry       []string `json:"sorry"`
+	NoGirl      []string `json:"noGirl"`
+	WowAboutMe  []string `json:"wowAboutMe"`
 }
 
 // ReadConfig reads bot configuration from config.json.

@@ -1,5 +1,52 @@
 {
-    "token" : "your token",
+    "token" : "yout token",
+    "support" : "your email or telegram",
     "mode" : "long polling",
-    "debug" : false
+    "updateTime" : "time",
+    "redisAddr" : "redis adress",
+    "redisPassword" : "",
+    "redisNumber" : 0,
+    "logFile" : "stdout",
+    "debug" : false,
+    "answers" : {
+        "greetings" : [
+            "Hello! Nice to meet you!😊",
+		    "Hi! What do you want to know about MGE World?🤓",
+		    "Howdy! How are you?😉",
+		    "Hiya! Nice to see you!👋",
+		    "Hello! What's new?😎",
+		    "Such a good day! I'am Hakutaku.😃",
+		    "G'day, man!🤠",
+		    "What a lovely day!❤",
+            "Gutten Tag! I know deutsh too (I'm smart)🇩🇪",
+            "How do you do?😉"
+        ],
+        "help" : "I'am Hakutaku and I know everything about MGE world.\nMy list of commands:\n/start - We'll start our chat\n/help - I'll show you list of commands\n/about - I'll try to find info about girl\n/list - I'll show you names of all the girls\n",
+        "doubts" : [
+            "Is this a joke?!😂",
+		    "Hmmm... I don't understand you...😐",
+		    "What did you mean?🙃",
+		    "Please, say it again!👂",
+		    "I love random strings too: sdfgegedrgjswrgfjeiopgketp[hege🤪",
+		    "Ahaha, what did you say?😚",
+		    "Sounds stupid...😕",
+		    "??😳",
+		    "Mmm...😕",
+		    "LoL, I think, it's stupid☹"
+        ],
+        "noArguments" : [
+            "I'am not so stupid😁",
+            "Are you fucked up?😡",
+            "Say my name - Mr. White - Goddamn right🧔"
+        ],
+        "sorry" : [
+            "Sorry"
+        ],
+        "noGirl" : [
+            "No girl"
+        ],
+        "wowAboutMe" : [
+            "Wow, it's about me"
+        ]
+    }
 }

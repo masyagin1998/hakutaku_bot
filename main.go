@@ -1,22 +1,40 @@
+// Copyright (C) 2018 Mikhail Masyagin
 package main
 
 import (
 	"hakutaku_bot/libhakutaku/bot"
 	"hakutaku_bot/libhakutaku/config-parser"
+	"hakutaku_bot/libhakutaku/log"
 
-	"github.com/mgutz/logxi/v1"
+	"os"
 )
 
 func main() {
 	// Reading config.json.
-	log.Info("Reading configuration file.")
 	config, err := configParser.ReadConfig()
 	if err != nil {
-		log.Error("Error occured, while reading configuration file", "error", err)
+		os.Exit(1)
 	}
 
-	// Starting bot.
-	log.Info("Starting hakutaku_bot", "token", config.Token, "mode", config.Mode, "debug", config.Debug)
-	err = bot.StartHakutakuBot(config)
-	log.Error("Error occured, while running bot.", "error", err)
+	// Creating logger.
+	logger, err := log.NewLogger(config.LogFile)
+	if err != nil {
+		os.Exit(1)
+	}
+	defer logger.CloseLogger()
+	logger.Info("Configuration",
+		"Token", config.Token,
+		"Support", config.Support,
+		"Mode", config.Mode,
+		"Update Time", config.UpdateTime,
+		"Redis Addr", config.RedisAddr,
+		"Redis Password", config.RedisPassword,
+		"Redis Number", config.RedisNumber,
+		"Log File", config.LogFile,
+		"Debug", config.Debug)
+
+	// Running bot.
+	if err = logger.Error("Error occured, while running bot", "error", bot.StartHakutakuBot(config, logger)); err != nil {
+		os.Exit(1)
+	}
 }
