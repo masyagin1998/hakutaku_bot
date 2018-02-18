@@ -6,3 +6,6 @@ Simple Telegram bot for MGEWiki written in Go.
 
 # As it looks on server:
 > ![screenshot2](screenshots/debug.png)
+
+# P.S.
+Many thanks for JKUL from USA.
