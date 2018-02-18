@@ -21,7 +21,35 @@
             "Gutten Tag! I know deutsh too (I'm smart)🇩🇪",
             "How do you do?😉"
         ],
-        "help" : "I'am Hakutaku and I know everything about MGE world.\nMy list of commands:\n/start - We'll start our chat\n/help - I'll show you list of commands\n/about - I'll try to find info about girl\n/list - I'll show you names of all the girls\n",
+        "help" : "I'am Hakutaku and I know everything about MGE world.\nMy list of commands:\n/start - We'll start our chat\n/help - I'll show you list of commands\n/about - I'll try to find info about girl\n/list - I'll show you names of all the girls\n/bug-report - You will be helped here",
+        "noArguments" : [
+            "I'am not so stupid😁",
+            "Are you fucked up?😡",
+            "Say my name - Mr. White - Goddamn right🧔",
+            "I need some arguments",
+            "Please, give me arguments"
+        ],
+        "noGirl" : [
+            "I can't find this girl.",
+            "I don't think that she exists...",
+            "You were not mistaken?",
+            "I can not remember such a girl.",
+            "No girl."
+        ],
+        "noGirlLetter" : [
+            "There is no girl on this letter.",
+            "Nobody. Nobody! NOBODY! TRAAAGER!!! TRAAAGER!!! (I love Outlast, and there is no girl on this letter).",
+            "Can't find any girl on this letter.",
+            "There are no girls on this letter. SAD BUT TRUE",
+            "No one"
+        ],
+        "wowAboutMe" : [
+            "Wow, it's about me!",
+            "Aabout me!",
+            "Me!",
+            "Heh, it's me!",
+            "❤"
+        ],
         "doubts" : [
             "Is this a joke?!😂",
 		    "Hmmm... I don't understand you...😐",
@@ -33,20 +61,6 @@
 		    "??😳",
 		    "Mmm...😕",
 		    "LoL, I think, it's stupid☹"
-        ],
-        "noArguments" : [
-            "I'am not so stupid😁",
-            "Are you fucked up?😡",
-            "Say my name - Mr. White - Goddamn right🧔"
-        ],
-        "sorry" : [
-            "Sorry"
-        ],
-        "noGirl" : [
-            "No girl"
-        ],
-        "wowAboutMe" : [
-            "Wow, it's about me"
         ]
     }
 }

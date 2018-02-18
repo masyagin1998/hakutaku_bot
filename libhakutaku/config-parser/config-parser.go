@@ -26,13 +26,13 @@ type Config struct {
 
 // AnswerStrings struct contains bot answers.
 type AnswerStrings struct {
-	Greetings   []string `json:"greetings"`
-	Help        string   `json:"help"`
-	Doubts      []string `json:"doubts"`
-	NoArguments []string `json:"noArguments"`
-	Sorry       []string `json:"sorry"`
-	NoGirl      []string `json:"noGirl"`
-	WowAboutMe  []string `json:"wowAboutMe"`
+	Greetings    []string `json:"greetings"`
+	Help         string   `json:"help"`
+	NoArguments  []string `json:"noArguments"`
+	NoGirl       []string `json:"noGirl"`
+	NoGirlLetter []string `json:"noGirlLetter"`
+	WowAboutMe   []string `json:"wowAboutMe"`
+	Doubts       []string `json:"doubts"`
 }
 
 // ReadConfig reads bot configuration from config.json.

@@ -31,16 +31,17 @@ func InitDatabase(redisClient *redis.Client, logger log.Logger) (err error) {
 	return parseMGEWiki(redisClient, logger)
 }
 
+// UpdateDatabase updates Redis one time a day.
 func UpdateDatabase(updateTime string, redisClient *redis.Client, logger log.Logger) {
 	// Getting current time.
 	currentH, currentM, _ := time.Now().Clock()
 	updateTimeArr := strings.Split(updateTime, ":")
-	updateH, err := AtoI(updateTimeArr[0])
+	updateH, err := atoI(updateTimeArr[0])
 	if err != nil {
 		logger.Error("Error occured, while running bot", "error", err)
 		os.Exit(1)
 	}
-	updateM, err := AtoI(updateTimeArr[1])
+	updateM, err := atoI(updateTimeArr[1])
 	if err != nil {
 		logger.Error("Error occured, while running bot", "error", err)
 		os.Exit(1)
@@ -69,7 +70,8 @@ func UpdateDatabase(updateTime string, redisClient *redis.Client, logger log.Log
 	}
 }
 
-func AtoI(numStr string) (num int, err error) {
+// atoI converts string to int.
+func atoI(numStr string) (num int, err error) {
 	var num64 int64
 	num64, err = strconv.ParseInt(numStr, 10, 64)
 	if err != nil {
@@ -79,6 +81,7 @@ func AtoI(numStr string) (num int, err error) {
 	return
 }
 
+// pingMGEWiki pings MGEWiki.
 func pingMGEWiki(logger log.Logger) (flag bool) {
 	response, err := http.Get("http://mgewiki.com/w/Main_Page")
 	if err != nil {

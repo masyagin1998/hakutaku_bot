@@ -33,7 +33,7 @@ func StartHakutakuBot(config configParser.Config, logger log.Logger) (err error)
 		"Log File", config.LogFile,
 		"Debug", config.Debug)
 
-	// Creatins Redis client.
+	// Creating Redis client.
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     config.RedisAddr,
 		Password: config.RedisPassword,
@@ -91,7 +91,6 @@ func longPolling(config configParser.Config, redisClient *redis.Client, bot *tgb
 		if update.Message == nil {
 			continue
 		}
-		logger.Info("New Message")
 		if err = makeResponse(config, redisClient, bot, update.Message); err != nil {
 			return
 		}
@@ -107,6 +106,10 @@ func randomString(answers []string) string {
 
 // makeResponse creates response message for request message
 func makeResponse(config configParser.Config, redisClient *redis.Client, bot *tgbotapi.BotAPI, requestMessage *tgbotapi.Message) (err error) {
+	logger.Info("New Message", "User ID", requestMessage.From.ID,
+		"User Name", requestMessage.From.FirstName+" "+requestMessage.From.LastName,
+		"User Link", requestMessage.From.UserName,
+		"Text", requestMessage.Text)
 	// Split command and arguments.
 	var command, arguments string
 	if strings.Contains(requestMessage.Text, " ") {
@@ -154,13 +157,12 @@ func makeResponse(config configParser.Config, redisClient *redis.Client, bot *tg
 					return
 				}
 				if flag == 0 {
-					text = string(i) + "\n" + "No girls names on this letter."
-				} else {
-					text, err = redisClient.Get("letter:" + string(i)).Result()
-					text = string(i) + "\n" + text
-					if err != nil {
-						return
-					}
+					continue
+				}
+				text, err = redisClient.Get("letter:" + string(i)).Result()
+				text = string(i) + "\n" + text
+				if err != nil {
+					return
 				}
 				responseMessage := tgbotapi.NewMessage(requestMessage.Chat.ID, text)
 				_, err = bot.Send(responseMessage)
@@ -168,23 +170,24 @@ func makeResponse(config configParser.Config, redisClient *redis.Client, bot *tg
 					return err
 				}
 			}
-			text = ""
+			return
+		}
+		var flag int64
+		flag, err = redisClient.Exists("letter:" + strings.ToUpper(arguments)).Result()
+		if err != nil {
+			return
+		}
+		if flag == 0 {
+			text = randomString(config.Answers.NoGirlLetter)
 		} else {
-			var flag int64
-			flag, err = redisClient.Exists("letter:" + strings.ToUpper(arguments)).Result()
+			text, err = redisClient.Get("letter:" + strings.ToUpper(arguments)).Result()
+			text = strings.ToUpper(arguments) + "\n" + text
 			if err != nil {
 				return
 			}
-			if flag == 0 {
-				text = strings.ToUpper(arguments) + "\n" + "No girls names on this letter."
-			} else {
-				text, err = redisClient.Get("letter:" + strings.ToUpper(arguments)).Result()
-				text = strings.ToUpper(arguments) + "\n" + text
-				if err != nil {
-					return
-				}
-			}
 		}
+	case "/bug-report":
+		text = config.Support
 	default:
 		text = randomString(config.Answers.Doubts)
 	}
