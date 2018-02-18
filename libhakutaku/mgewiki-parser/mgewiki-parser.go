@@ -1,3 +1,8 @@
+// Copyright (C) 2018 Mikhail Masyagin
+
+/*
+Package MGEWiki contains work with Redis and MGEWiki parser.
+*/
 package MGEWiki
 
 import (
@@ -5,68 +10,188 @@ import (
 	"hakutaku_bot/libhakutaku/log"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
 )
 
-// ParseMGEWiki parses all info from MGEWiki and pushes it into Redis.
-func ParseMGEWiki(updateTime string, redisClient *redis.Client, logger log.Logger) (err error) {
-	if ok := redisClient.Exists("letters"); ok.Val() == 228 {
-		logger.Info("The database already has information from MGEWiki")
-	} else {
-		logger.Info("Starting download information from MGEWiki")
-		var names map[rune][]string
-		names, err = getListOfGirls()
-		if err != nil {
-			return
-		}
-
-		logger.Info("Starting download \"Letter : Names\" pairs from MGEWiki")
-		for k, v := range names {
-			if len(v) != 0 {
-				err = redisClient.SAdd("letters", k).Err()
-				if err != nil {
-					return
-				}
-				letterNames := strings.Join(v, "\n")
-				err = redisClient.Set("letter:"+string(k), letterNames, 0).Err()
-				if err != nil {
-					return
-				}
-				logger.Info("Letter : Name", "Letter", string(k), "Name", "\n"+letterNames)
-			}
-		}
-
-		logger.Info("Starting download Name : Link pairs from MGEWiki")
-		for _, v := range names {
-			for _, v1 := range v {
-				var link string
-				link, err = getGirlsLink(v1)
-				if err != nil {
-					return
-				}
-				if link == "" {
-					err = errors.New("Can't get link for " + v1)
-					return
-				}
-				err = redisClient.Set("name:"+v1, link, 0).Err()
-				if err != nil {
-					return
-				}
-				logger.Info("Name : Link", "Name", v1, "Link", link)
-				time.Sleep(time.Second * 2)
-			}
-		}
+// InitDatabase parses all info from MGEWiki and pushes it into Redis.
+func InitDatabase(redisClient *redis.Client, logger log.Logger) (err error) {
+	// Checking if database is already exists.
+	ok := false
+	if ok, err = databaseCheck(redisClient, logger); ok || (err != nil) {
+		return
 	}
+	// Getting list of girls.
+	logger.Info("Updating database.")
+	return parseMGEWiki(redisClient, logger)
+}
+
+func UpdateDatabase(updateTime string, redisClient *redis.Client, logger log.Logger) {
+	// Getting current time.
+	currentH, currentM, _ := time.Now().Clock()
+	updateTimeArr := strings.Split(updateTime, ":")
+	updateH, err := AtoI(updateTimeArr[0])
+	if err != nil {
+		logger.Error("Error occured, while running bot", "error", err)
+		os.Exit(1)
+	}
+	updateM, err := AtoI(updateTimeArr[1])
+	if err != nil {
+		logger.Error("Error occured, while running bot", "error", err)
+		os.Exit(1)
+	}
+
+	// Timer.
+	update := updateH*60 + updateM
+	current := currentH*60 + currentM
+	if update > current {
+		time.Sleep(time.Duration(update-current) * time.Minute)
+	} else {
+		time.Sleep(time.Duration(24*60-current+update) * time.Minute)
+	}
+
+	// Running updates.
+	for {
+		if pingMGEWiki(logger) {
+			logger.Info("Updating database.")
+			err := parseMGEWiki(redisClient, logger)
+			if err != nil {
+				logger.Error("Error occured, while running bot", "error", err)
+				os.Exit(1)
+			}
+		}
+		time.Sleep(time.Hour * 24)
+	}
+}
+
+func AtoI(numStr string) (num int, err error) {
+	var num64 int64
+	num64, err = strconv.ParseInt(numStr, 10, 64)
+	if err != nil {
+		return
+	}
+	num = int(num64)
 	return
 }
 
-// getListOfGirls tries to fing list of all girls.
+func pingMGEWiki(logger log.Logger) (flag bool) {
+	response, err := http.Get("http://mgewiki.com/w/Main_Page")
+	if err != nil {
+		logger.Error("Ping \"http://mgewiki.com/w/Main_Page\"", "error", err)
+		return
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		logger.Info("Ping \"http://mgewiki.com/w/Main_Page\"", "error", errors.New("Bad request "+string(response.StatusCode)))
+		return
+	}
+	flag = true
+	return
+}
+
+// databaseCheck checks if info about girls exists in database.
+func databaseCheck(redisClient *redis.Client, logger log.Logger) (ok bool, err error) {
+	// Checking if letters list exists.
+	logger.Info("Checking database")
+	var flag int64
+	flag, err = redisClient.Exists("letters").Result()
+	if err != nil {
+		return
+	}
+	if flag == 0 {
+		return
+	}
+	var letters []string
+	letters, err = redisClient.SMembers("letters").Result()
+	sort.Strings(letters)
+
+	logger.Info("Letters", "letters", letters)
+	for _, i := range letters {
+		var flag int64
+		flag, err = redisClient.Exists("letter:" + i).Result()
+		if err != nil {
+			err = errors.New("Damaged database. You should write in teminal: \"redis-cli\", \"FLUSHALL\" and restart app")
+			return
+		}
+		if flag == 0 {
+			return
+		}
+		var letterNames string
+		letterNames, err = redisClient.Get("letter:" + i).Result()
+		logger.Info("\"Letter : Names\"", "Letter", i, "Names", letterNames)
+		names := strings.Split(letterNames, "\n")
+		for _, name := range names {
+			var link string
+			link, err = redisClient.Get("name:" + strings.ToLower(name)).Result()
+			if err != nil {
+				err = errors.New("Damaged database. You should write in teminal: \"redis-cli\", \"FLUSHALL\" and restart app")
+				return
+			}
+			logger.Info("\"Name : Link\"", "Name", name, "Link", link)
+		}
+	}
+
+	// Database if ready.
+	logger.Info("Database is ready")
+	ok = true
+	return
+}
+
+func parseMGEWiki(redisClient *redis.Client, logger log.Logger) (err error) {
+	logger.Info("Starting download \"Letter : Names\" pairs from MGEWiki")
+	var names map[rune][]string
+	names, err = getListOfGirls()
+	if err != nil {
+		return
+	}
+
+	// Logging list of girls and pushing it to database.
+	for i := 'A'; i <= 'Z'; i++ {
+		if len(names[i]) == 0 {
+			continue
+		}
+		err = redisClient.SAdd("letters", string(i)).Err()
+		if err != nil {
+			return
+		}
+		letterNames := strings.Join(names[i], "\n")
+		err = redisClient.Set("letter:"+string(i), letterNames, 0).Err()
+		if err != nil {
+			return
+		}
+		logger.Info("\"Letter : Names\"", "Letter", string(i), "Names", letterNames)
+		for _, name := range names[i] {
+			var link string
+			link, err = getGirlsLink(name)
+			if err != nil {
+				return
+			}
+			if link == "" {
+				err = errors.New("Can't get link for " + name)
+				return
+			}
+			err = redisClient.Set("name:"+strings.ToLower(name), link, 0).Err()
+			if err != nil {
+				return
+			}
+			logger.Info("\"Name : Link\"", "Name", name, "Link", link)
+		}
+	}
+	logger.Info("Database is ready")
+	return
+}
+
+// getListOfGirls tries to find list of all girls.
 func getListOfGirls() (names map[rune][]string, err error) {
+	// Initialization of map.
 	names = make(map[rune][]string)
 
+	// Request for start page.
 	var response *http.Response
 	response, err = http.Get("http://mgewiki.com/w/Category:Monster_Girls")
 	if err != nil {
@@ -76,6 +201,7 @@ func getListOfGirls() (names map[rune][]string, err error) {
 	if response.StatusCode != http.StatusOK {
 		return
 	}
+	// Searching begining of girls list in body.
 	var bodyBytes []byte
 	bodyBytes, err = ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -89,11 +215,14 @@ func getListOfGirls() (names map[rune][]string, err error) {
 	}
 	bodyString = bodyString[listStartIndex+len(header):]
 
-	// Alphabet.
+	// Pushing alphabet to map.
 	for k := 'A'; k <= 'Z'; k++ {
 		names[k] = make([]string, 0)
 	}
+
+	// Search Loop.
 	for {
+		// Searching for girls in girls list.
 		for k := 'A'; k <= 'Z'; k++ {
 			linkStartIndex := strings.Index(bodyString, "<h3>"+string(k)+"</h3>")
 			if linkStartIndex != -1 {
@@ -114,6 +243,7 @@ func getListOfGirls() (names map[rune][]string, err error) {
 				}
 			}
 		}
+		// Searching for next page.
 		linkStopIndex := strings.Index(bodyString, "next page")
 		if (linkStopIndex != -1) && (bodyString[linkStopIndex-1] == '>') {
 			quotMarkCounter := 0
@@ -158,7 +288,9 @@ func getListOfGirls() (names map[rune][]string, err error) {
 	return
 }
 
+// getGirlsLink tries to find current girl link.
 func getGirlsLink(name string) (link string, err error) {
+	// Request for girls page.
 	var response1 *http.Response
 	response1, err = http.Get("http://mgewiki.com/w/" + strings.Replace(name, " ", "_", -1))
 	if err != nil {
@@ -185,8 +317,9 @@ func getGirlsLink(name string) (link string, err error) {
 	for bodyString1[linkStopIndex1] != '"' {
 		linkStopIndex1++
 	}
-	link = "http://mgewiki.com" + bodyString1[linkStartIndex1+1:linkStopIndex1]
 
+	// Request for image page.
+	link = "http://mgewiki.com" + bodyString1[linkStartIndex1+1:linkStopIndex1]
 	var response2 *http.Response
 	response2, err = http.Get(link)
 	if err != nil {
@@ -203,40 +336,19 @@ func getGirlsLink(name string) (link string, err error) {
 	}
 	bodyString2 := string(bodyBytes2)
 
-	linkStopIndex2 := strings.Index(bodyString2, "Original file")
-	quotMarkCounter := 0
-	for quotMarkCounter != 5 {
-		linkStopIndex2--
+	tag := "<div class=\"fullMedia\"><a href="
+	linkStartIndex2 := strings.Index(bodyString2, tag)
+	bodyString2 = bodyString2[linkStartIndex2+len(tag):]
+	linkStartIndex2 = 1
+	linkStopIndex2 := linkStartIndex2
+	for {
+		linkStopIndex2++
 		if bodyString2[linkStopIndex2] == '"' {
-			quotMarkCounter++
-		}
-	}
-	linkStartIndex2 := linkStopIndex2 - 1
-	for quotMarkCounter != 6 {
-		linkStartIndex2--
-		if bodyString2[linkStartIndex2] == '"' {
-			quotMarkCounter++
+			break
 		}
 	}
 
-	var response3 *http.Response
-	link = "http://mgewiki.com" + bodyString2[linkStartIndex2+1:linkStopIndex2]
-	response3, err = http.Get(link)
-	if err != nil {
-		return
-	}
-	defer response3.Body.Close()
-	if response3.StatusCode != http.StatusOK {
-		return
-	}
-	var bodyBytes3 []byte
-	bodyBytes3, err = ioutil.ReadAll(response3.Body)
-	if err != nil {
-		return
-	}
-	if !strings.HasPrefix(http.DetectContentType(bodyBytes3), "image/") {
-		link = ""
-		return
-	}
+	// Image link.
+	link = "http://mgewiki.com" + bodyString2[linkStartIndex2:linkStopIndex2]
 	return
 }

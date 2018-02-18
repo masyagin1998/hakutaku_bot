@@ -1,9 +1,9 @@
 {
-    "token" : "yout token",
-    "support" : "your email or telegram",
+    "token" : "your token",
+    "support" : "email or something like this",
     "mode" : "long polling",
-    "updateTime" : "time",
-    "redisAddr" : "redis adress",
+    "updateTime" : "6:00",
+    "redisAddr" : "localhost:6379",
     "redisPassword" : "",
     "redisNumber" : 0,
     "logFile" : "stdout",

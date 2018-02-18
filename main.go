@@ -22,16 +22,6 @@ func main() {
 		os.Exit(1)
 	}
 	defer logger.CloseLogger()
-	logger.Info("Configuration",
-		"Token", config.Token,
-		"Support", config.Support,
-		"Mode", config.Mode,
-		"Update Time", config.UpdateTime,
-		"Redis Addr", config.RedisAddr,
-		"Redis Password", config.RedisPassword,
-		"Redis Number", config.RedisNumber,
-		"Log File", config.LogFile,
-		"Debug", config.Debug)
 
 	// Running bot.
 	if err = logger.Error("Error occured, while running bot", "error", bot.StartHakutakuBot(config, logger)); err != nil {
