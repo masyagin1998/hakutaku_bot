@@ -91,7 +91,7 @@ func longPolling(config configParser.Config, redisClient *redis.Client, bot *tgb
 		if update.Message == nil {
 			continue
 		}
-		if err = makeResponse(config, redisClient, bot, update.Message); err != nil {
+		if err = makeResponse(config, redisClient, bot, logger, update.Message); err != nil {
 			return
 		}
 	}
@@ -105,7 +105,7 @@ func randomString(answers []string) string {
 }
 
 // makeResponse creates response message for request message
-func makeResponse(config configParser.Config, redisClient *redis.Client, bot *tgbotapi.BotAPI, requestMessage *tgbotapi.Message) (err error) {
+func makeResponse(config configParser.Config, redisClient *redis.Client, bot *tgbotapi.BotAPI, logger log.Logger, requestMessage *tgbotapi.Message) (err error) {
 	logger.Info("New Message", "User ID", requestMessage.From.ID,
 		"User Name", requestMessage.From.FirstName+" "+requestMessage.From.LastName,
 		"User Link", requestMessage.From.UserName,
