@@ -8,6 +8,7 @@ package bot
 import (
 	"errors"
 	"math/rand"
+	"net/http"
 	"strings"
 	"time"
 
@@ -77,7 +78,7 @@ func StartHakutakuBot(config configParser.Config, logger log.Logger) (err error)
 
 // longPolling starts telegram bot in "long polling" mode. Better for weak server and lowload.
 func longPolling(config configParser.Config, redisClient *redis.Client, bot *tgbotapi.BotAPI, logger log.Logger) (err error) {
-	// Creating telegram bot.
+	// Creating bot.
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 	updates, err := bot.GetUpdatesChan(updateConfig)
@@ -94,6 +95,23 @@ func longPolling(config configParser.Config, redisClient *redis.Client, bot *tgb
 		if err = makeResponse(config, redisClient, bot, logger, update.Message); err != nil {
 			return
 		}
+	}
+	return
+}
+
+// webHook starts telegram bot in "webHook" mode. Better for powerfull server and highload.
+func webHook(bot *tgbotapi.BotAPI, redisClient *redis.Client, logger log.Logger) (err error) {
+	// Creating bot.
+	_, err = bot.SetWebhook(tgbotapi.NewWebhookWithCert(""+bot.Token, "cert.pem"))
+	if err != nil {
+		return
+	}
+	updates := bot.ListenForWebhook("/" + bot.Token)
+	go http.ListenAndServeTLS("", "cert.pem", "key.pem", nil)
+
+	// Running bot loop.
+	for update := range updates {
+		logger.Info("Kek", "heh", update)
 	}
 	return
 }
@@ -207,10 +225,5 @@ func makeResponse(config configParser.Config, redisClient *redis.Client, bot *tg
 			return err
 		}
 	}
-	return
-}
-
-// webHook starts telegram bot in "webHook" mode. Better for powerfull server and highload.
-func webHook(bot *tgbotapi.BotAPI, redisClient *redis.Client, logger log.Logger) (err error) {
 	return
 }
