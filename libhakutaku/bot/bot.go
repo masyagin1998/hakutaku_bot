@@ -101,18 +101,6 @@ func longPolling(config configParser.Config, redisClient *redis.Client, bot *tgb
 
 // webHook starts telegram bot in "webHook" mode. Better for powerfull server and highload.
 func webHook(bot *tgbotapi.BotAPI, redisClient *redis.Client, logger log.Logger) (err error) {
-	// Creating bot.
-	_, err = bot.SetWebhook(tgbotapi.NewWebhookWithCert(""+bot.Token, "cert.pem"))
-	if err != nil {
-		return
-	}
-	updates := bot.ListenForWebhook("/" + bot.Token)
-	go http.ListenAndServeTLS("", "cert.pem", "key.pem", nil)
-
-	// Running bot loop.
-	for update := range updates {
-		logger.Info("Kek", "heh", update)
-	}
 	return
 }
 
