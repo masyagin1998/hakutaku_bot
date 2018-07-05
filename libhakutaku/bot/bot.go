@@ -8,7 +8,6 @@ package bot
 import (
 	"errors"
 	"math/rand"
-	"net/http"
 	"strings"
 	"time"
 
